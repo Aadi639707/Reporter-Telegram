@@ -1,12 +1,9 @@
 import os
-import time
-import subprocess
 from threading import Thread
 from flask import Flask
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# --- 1. RENDER PORT FIX (Flask Server) ---
+# --- Render Port Fix (Bot ko online rakhne ke liye) ---
 web = Flask('')
 
 @web.route('/')
@@ -14,68 +11,52 @@ def home():
     return "Bot is running 24/7!"
 
 def run_web():
+    # Render default port 10000 use karta hai
     port = int(os.environ.get("PORT", 10000))
     web.run(host='0.0.0.0', port=port)
 
-# --- 2. BOT CONFIGURATION ---
-API_ID = int(os.environ.get("API_ID", "12345"))
-API_HASH = os.environ.get("API_HASH", "your_api_hash")
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "your_bot_token")
+# --- Bot Configuration ---
+# Details Render Environment Variables se uthayega
+API_ID = int(os.environ.get("API_ID", "27070308"))
+API_HASH = os.environ.get("API_HASH", "d1bfc4df9e7a49882cf91fc9f98fc8dd")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 app = Client("reporter_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-BANNER = """
-    🕷 REPORTER SpiDer TELEGRAM 🕷
-    Status: Active (24/7)
-"""
-
-# --- 3. COMMANDS & HANDLERS ---
+# --- Commands ---
 
 @app.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply_text(
-        f"```{BANNER}```\n"
-        "**Kaise use karein?**\n\n"
-        "Report karne ke liye niche di gayi command bhejें:\n"
-        "`/report @username method_number count` \n\n"
-        "**Example:** `/report @duffer 1 10` \n"
-        "(Iska matlab: @duffer ko Spam (1) ki 10 reports bhejo)"
+        "**🕷 Reporter Bot Active 🕷**\n\n"
+        "Kisi ID ko report karne ke liye ye command bhejें:\n"
+        "`/report @username`"
     )
 
 @app.on_message(filters.command("report"))
-async def report_trigger(client, message):
-    # Command check: /report @target method count
+async def trigger_report(client, message):
     if len(message.command) < 2:
-        return await message.reply_text("❌ Username missing! \nFormat: `/report @username`")
+        return await message.reply_text("❌ Username missing! Example: `/report @duffer`")
 
     target = message.command[1]
-    method = message.command[2] if len(message.command) > 2 else "1"
-    count = message.command[3] if len(message.command) > 3 else "5"
+    status_msg = await message.reply_text(f"🚀 **Process Shuru!**\n🎯 Target: {target}\n\nLogs check karein...")
 
-    status_msg = await message.reply_text(f"🚀 **Report Process Started!**\n\n🎯 Target: {target}\n🔢 Method: {method}\n📊 Count: {count}")
+    # Report script ko trigger karna aur logs ko console mein dikhana
+    # Agar aapki file 'report' folder ke andar hai toh 'report/report.py' likhein
+    # Agar bahar hai toh sirf 'report.py'
+    exit_code = os.system(f"python3 report/report.py {target}")
 
-    try:
-        # report/report.py ko background mein run karna
-        # Hum arguments pass kar rahe hain: target, method, count
-        process = subprocess.Popen(
-            ["python3", "report/report.py", target, method, count],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        
-        # Script finish hone ka wait karna (Optional, agar response chahiye)
-        await status_msg.edit_text(f"✅ **Report Sent Successfully!**\nTarget: {target} par kaam ho gaya.")
-        
-    except Exception as e:
-        await status_msg.edit_text(f"❌ **Error:** {str(e)}")
+    if exit_code == 0:
+        await status_msg.edit_text(f"✅ **Process Complete!**\nTarget: {target}\nReports bhej di gayi hain.")
+    else:
+        await status_msg.edit_text(f"⚠️ **Script Run Hui!**\nLekin shayad koi error aaya hai. Render Logs check karein.")
 
-# --- 4. STARTING EVERYTHING ---
+# --- Start Everything ---
 if __name__ == "__main__":
-    # Web server start karein (Render ke liye)
+    # Web server ko alag thread mein chalana
     Thread(target=run_web).start()
     
-    # Bot start karein
+    # Bot ko start karna
     print("Bot is starting...")
     app.run()
     
