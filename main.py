@@ -1,89 +1,42 @@
-import time, os, platform, subprocess, sys
+import os
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# Library install karne ka function
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+# --- Credentials (Render ke Environment Variables mein set karein) ---
+API_ID = int(os.environ.get("API_ID", "12345"))
+API_HASH = os.environ.get("API_HASH", "your_hash")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "your_token")
 
-# Prettytable check aur install
-try:
-    from prettytable import PrettyTable
-except ImportError:
-    install('prettytable')
-    from prettytable import PrettyTable
+app = Client("reporter_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Colorama check aur install
-try:
-    from colorama import init
-except ImportError:
-    install('colorama')
-    from colorama import init
+# Start Command
+@app.on_message(filters.command("start"))
+async def start(client, message):
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("1️⃣ Report Channel", callback_data="rep_ch")],
+        [InlineKeyboardButton("2️⃣ Report Account", callback_data="rep_acc")],
+        [InlineKeyboardButton("3️⃣ Report Group", callback_data="rep_grp")]
+    ])
+    
+    await message.reply_text(
+        "**🕷 Reporter Telegram Bot 🕷**\n\nNiche diye gaye buttons par click karke report shuru karein:",
+        reply_markup=buttons
+    )
 
-# Colors define karna
-rd, gn, lgn, yw, lrd, be, pe = '\033[00;31m', '\033[00;32m', '\033[01;32m', '\033[01;33m', '\033[01;31m', '\033[94m', '\033[01;35m'
-cn, k, g = '\033[00;36m', '\033[90m', '\033[38;5;130m'
+# Button Click Handling
+@app.on_callback_query()
+async def callback(client, callback_query):
+    data = callback_query.data
+    
+    if data == "rep_ch":
+        await callback_query.message.edit_text("✅ Channel Report logic start ho raha hai...")
+        # Yahan aap apna reporting ka logic (reporter.py wala) likh sakte hain
+        
+    elif data == "rep_acc":
+        await callback_query.message.edit_text("✅ Account Report logic start ho raha hai...")
+        
+    elif data == "rep_grp":
+        await callback_query.message.edit_text("⚠️ Ye section abhi update ho raha hai (Coming Soon).")
 
-def re(text):
-    for char in text:
-        print(char, end='', flush=True)
-        time.sleep(0.001)  
-
-if 'Windows' in platform.uname():
-    init()
-
-banner = f"""                                                                
-{k}                              -     -                            
-                            .+       +.                          
-                           :#         #:                         
-                          =%           %-                        
-           {lrd}REPORTER{k}     -*%.   {g}SpiDer{k}   .%+    {be}TELEGRAM      {k}       
-                        #@:             -@#                      
-                     :  #@:             :@* :                   
-                    -=  *@:             -@* =-                  
-                   -%   *@-             =@+   %-                 
-                  -@=  .*@+             +@+.  =@-                
-                 =@%   .+@%-    :.:    -@@+.   #@:               
-                =@@#:     =%%-+@@@@@+-%%=     .#@@=              
-                 .+%@%+:.   -#@@@@@@@#-   .:=#@%=                
-                    -##%%%%%#*@@@@@@@*#%%%%%##-                  
-                  .*#######%@@@@@@@@@@@%#######*.                
-               .=#@%*+=--#@@@@@@@@@@@@@@@#--=+*%@#=.             
-            .=#@%+:     *@@@@@+.   .+@@@@@* :+%@#=.          
-          :*@@=.    .=#@@@@@@@       @@@@@@@#=.    .=@@*.        
-            =@+    .%@@*%@@@@@* *@@@@@%*@@%.    +@=          
-             :@=    +@# :@@@@@#     #@@@@%. #@+    =@:           
-              .#-   :@@  .%@@#       #@@#.  @@:   -#.            
-                +:   %@:   =%         %=   :@%   -+              
-                 -.  +@+                   +@+  .-               
-                  .  :@#                   #@:  .                
-                      %@.    {cn}@EsFelUrM{k}    .@%                    
-                      :+@:               =@+:                    
-                        =@:             :@-                      
-                         -%.           .%:                       
-                          .#           #.                        
-                            +         +                          
-                             -       -                     
-"""
-
-re(banner)
-re("Warning ! This is a test reporter, any offense is the responsibility of the user !\n")
-
-print(f"{lrd}")
-t = PrettyTable([f'{cn}Number{lrd}', f'{cn}info{lrd}'])
-t.add_row([f'{lgn}1{lrd}', f'{gn}Reporter Channel{lrd}'])
-t.add_row([f'{lgn}2{lrd}', f'{gn}Reporter Account{lrd}'])
-t.add_row([f'{lgn}3{lrd}', f'{gn}Reporter Group [Updating]{lrd}'])
-print(t)
-
-# Render par input kaam nahi karega agar aap "Background Worker" nahi chala rahe
-# Lekin script test karne ke liye ye sahi hai
-try:
-    number = input(f"{gn}Enter Number : {cn}")
-    if number == "1":
-        os.system("python report/reporter.py")
-    elif number == "2":
-        os.system("python report/report.py")
-    elif number == "3":
-        print("This section is being updated and will be added soon \n\nChannel : @esfelurm")
-except EOFError:
-    print(f"\n{lrd}Error: Render web service par user input support nahi hota.")
-	
+print("Bot is alive...")
+app.run()
