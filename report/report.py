@@ -2,33 +2,25 @@ import os, sys, time
 from telethon import TelegramClient, types, functions
 from telethon.sessions import StringSession
 
-def start_report():
-    target = sys.argv[1] if len(sys.argv) > 1 else None
-    if not target: return
-    
-    # Render ke Environment Variables se String uthayega
-    string_session = os.environ.get("SESSION_STRING")
-    api_id = 27070308
-    api_hash = 'd1bfc4df9e7a49882cf91fc9f98fc8dd'
-    
-    if not string_session:
-        print("Error: SESSION_STRING not found in Render settings!")
-        return
+# Target aur details lena
+target = sys.argv[1] if len(sys.argv) > 1 else None
+# Pehli ID check karna
+string = os.environ.get("SESSION_1")
 
-    with TelegramClient(StringSession(string_session), api_id, api_hash) as client:
-        try:
-            entity = client.get_entity(target)
-            for i in range(10): # 10 reports bhejne ke liye
-                client(functions.account.ReportPeerRequest(
-                    peer=entity,
-                    reason=types.InputReportReasonSpam(),
-                    message='Reporting for spam/abuse'
-                ))
-                print(f"Report {i+1} sent!")
-                time.sleep(2)
-        except Exception as e:
-            print(f"Error: {e}")
+if not target or not string:
+    print(f"Error: Target({target}) or Session({string}) missing!")
+    sys.exit()
 
-if __name__ == "__main__":
-    start_report()
+try:
+    with TelegramClient(StringSession(string), 27070308, 'd1bfc4df9e7a49882cf91fc9f98fc8dd') as client:
+        print(f"Connecting to ID for {target}...")
+        entity = client.get_entity(target)
+        client(functions.account.ReportPeerRequest(
+            peer=entity,
+            reason=types.InputReportReasonSpam(),
+            message='Spamming'
+        ))
+        print("Report 1 sent!") # Ye line ab aani chahiye
+except Exception as e:
+    print(f"FAILED: {e}")
 	
